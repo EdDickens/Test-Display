@@ -207,6 +207,8 @@ lvgl:
     - id: header_footer
       align: CENTER
       text_align: CENTER
+      grid_cell_x_align: Stretch
+      grid_cell_y_align: CENTER
       bg_color: 0x000000
       bg_opa: COVER
       border_opa: TRANSP
@@ -219,8 +221,6 @@ lvgl:
       text_font: montserrat_28
       border_color: 0x000000
       text_color: 0x323AA8
-      width: 90%
-      height: 50
 #---------------------------------------------------
     - id: time_format
       bg_color: 0x000000
@@ -235,68 +235,106 @@ lvgl:
       text_font: montserrat_48
       border_color: 0x000000
       text_color: 0x323AA8
-      width: 90%
-      height: 90%
+      width: 95%
+      height: 95%
 #---------------------------------------------------
     - id: footer_button
-      width: 30%
+      grid_cell_x_align: Stretch
+      grid_cell_y_align: CENTER
       bg_opa: TRANSP
       border_opa: TRANSP
       shadow_opa: TRANSP
       pad_all: 0
+      pad_row: 0
+      pad_column: 0
       outline_color: 0x00FF00
       outline_width: 2
 #--------------------------------------------------------------------------------------------------
   top_layer:
     widgets:
-      - label:
-          id: date_label
-          styles: header_footer
-          text: "JAN 22"
-          align: top_right
-          width: 45%
-      - label:
-          id: day_label
-          styles: header_footer
-          text: "MON"
-          align: top_left
-          width: 45%
-      - button:
-          id: page_prev_button
-          styles: footer_button
-          align: bottom_left
-          on_press:
-            then:
-              lvgl.page.previous:
-          widgets:
-            - label:
-                id: page_prev
-                styles: header_footer
-                text: "\uF053"
-      - button:
-          id: page_home_button
-          styles: footer_button
-          align: bottom_mid
-          on_press:
-            then:
-              lvgl.page.show: main_page
-          widgets:
-            - label:
-                id: page_home
-                styles: header_footer
-                text: "\uF015"
-      - button:
-          id: page_next_button
-          styles: footer_button
-          align: bottom_right
-          on_press:
-            then:
-              lvgl.page.next:
-          widgets:
-            - label:
-                id: page_next
-                styles: header_footer
-                text: "\uF054"
+        - obj:
+            align: top_mid
+            width: 770
+            height: 50
+            pad_all: 0
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: 2
+            outline_color: 0xFF0000
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1)]
+              grid_rows: [FR(1)]
+            widgets:
+              - label:
+                  id: date_label
+                  styles: header_footer
+                  text: "JAN 22"
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+              - label:
+                  id: day_label
+                  styles: header_footer
+                  text: "MON"
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 0
+#---------------------------------------------------
+        - obj:
+            align: bottom_mid
+            width: 770
+            height: 50
+            pad_all: 0
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: 2
+            outline_color: 0xFF0000
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1),FR(1)]
+              grid_rows: [FR(1)]
+            widgets:
+              - button:
+                  id: page_prev_button
+                  styles: footer_button
+                  align: bottom_left
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  on_press:
+                    then:
+                      lvgl.page.previous:
+                  widgets:
+                    - label:
+                        id: page_prev
+                        styles: header_footer
+                        text: "\uF053"
+              - button:
+                  id: page_home_button
+                  styles: footer_button
+                  align: bottom_mid
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 0
+                  on_press:
+                    then:
+                      lvgl.page.show: main_page
+                  widgets:
+                    - label:
+                        id: page_home
+                        styles: header_footer
+                        text: "\uF015"
+              - button:
+                  id: page_next_button
+                  styles: footer_button
+                  align: bottom_right
+                  grid_cell_column_pos: 2
+                  grid_cell_row_pos: 0
+                  on_press:
+                    then:
+                      lvgl.page.next:
+                  widgets:
+                    - label:
+                        id: page_next
+                        styles: header_footer
+                        text: "\uF054"
   #--------------------------------------------------------------------------------------------------
   pages:
     - id: main_page
