@@ -1,0 +1,362 @@
+substitutions:
+  name: "test-display"
+  friendly_name: Test Display
+  
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: false
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: y
+      CONFIG_ESP32S3_DATA_CACHE_64KB: y
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
+      CONFIG_SPIRAM_RODATA: y
+
+# Enable logging
+logger:
+  logs:
+    component: ERROR
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret haapi_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  manual_ip:
+    static_ip: 10.0.0.230
+    gateway: 10.0.0.1
+    subnet: 255.255.255.0
+    dns1: 75.75.75.75
+    dns2: 75.75.76.76
+  
+  fast_connect: off
+
+# Enable fallback hotspot (captive portal) in case wifi connection fails
+#  ap:
+#    ssid: "${friendly_name} Fallback"
+#    password: !secret haapi_password
+#--------------------------------------------------------------------------------------------------
+#web_server:
+#--------------------------------------------------------------------------------------------------
+#captive_portal:
+#--------------------------------------------------------------------------------------------------
+psram:
+  mode: octal
+  speed: 80MHz
+#--------------------------------------------------------------------------------------------------
+i2c:
+  - id: i2cbus_a
+    sda: GPIO08
+    scl: GPIO09
+    scan: True
+#--------------------------------------------------------------------------------------------------
+ch422g:
+  - i2c_id: i2cbus_a
+    id: ch422g_hub
+#--------------------------------------------------------------------------------------------------
+switch:
+  - platform: restart
+    name: "${friendly_name} Restart"
+#---------------------------------------------------
+  - platform: gpio
+    name: ${friendly_name} Backlight
+    id: backlight_switch
+    pin:
+      ch422g: ch422g_hub
+      number: 2
+      allow_other_uses: true
+      mode:
+        output: true
+    inverted: false
+    restore_mode: ALWAYS_ON
+#--------------------------------------------------------------------------------------------------
+sensor:
+- platform: wifi_signal
+  name: "${friendly_name} Signal Strength"
+  update_interval: 60s
+#--------------------------------------------------------------------------------------------------
+text_sensor:
+- platform: wifi_info
+  ip_address:
+    name: ${friendly_name} IP
+  ssid:
+    name: ${friendly_name} SSID
+  bssid:
+    name: ${friendly_name} BSSID
+  mac_address:
+    name: ${friendly_name} Mac
+#--------------------------------------------------------------------------------------------------
+time:
+  - platform: homeassistant
+    id: esptime
+    on_time_sync:
+      - script.execute: time_update
+      - script.execute: date_update
+    on_time:
+      - minutes: '*'
+        seconds: 0
+        then:
+          - script.execute: time_update
+      - hours: 0
+        minutes: 0
+        seconds: 0
+        then:
+          - script.execute: date_update
+#---------------------------------------------------------------------------------------------------
+display:
+  - platform: rpi_dpi_rgb
+    id: my_display
+    auto_clear_enabled: false
+    update_interval: never
+    color_order: RGB
+    pclk_frequency: 16MHz
+    dimensions:
+      width: 800
+      height: 480
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 3
+    enable_pin:
+      ch422g: ch422g_hub
+      number: 2
+      allow_other_uses: true
+    de_pin:
+      number: 5
+    hsync_pin:
+      number: 46
+      ignore_strapping_warning: true
+    vsync_pin:
+      number: 3
+      ignore_strapping_warning: true
+    pclk_pin: 7
+    pclk_inverted: false
+    hsync_back_porch: 10 #30
+    hsync_front_porch: 20 #210 
+    hsync_pulse_width: 10 #30
+    vsync_back_porch: 10 #4
+    vsync_front_porch: 10 #4
+    vsync_pulse_width: 10 #4
+    data_pins:
+      red:
+        - 1         #r3
+        - 2         #r4
+        - 42        #r5
+        - 41        #r6
+        - 40        #r7
+      blue:
+        - 14        #b3
+        - 38        #b4
+        - 18        #b5
+        - 17        #b6
+        - 10        #b7
+      green:
+        - 39        #g2
+        - 0         #g3
+        - 45        #g4
+        - 48        #g5
+        - 47        #g6
+        - 21        #g7
+#--------------------------------------------------------------------------------------------------
+touchscreen:
+  platform: gt911
+  address: 0x5D
+  i2c_id: i2cbus_a
+  id: my_touchscreen
+  update_interval: 16ms
+  interrupt_pin: GPIO4
+  reset_pin:
+    ch422g: ch422g_hub
+    number: 1
+    mode: output
+  on_touch:
+    - switch.turn_on: backlight_switch
+    - script.execute: time_update
+    - lvgl.resume:
+    - lvgl.widget.redraw:
+    - lambda: |-
+          ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+              touch.x,
+              touch.y,
+              touch.x_raw,
+              touch.y_raw
+              );
+#--------------------------------------------------------------------------------------------------
+lvgl:
+  displays:
+    - my_display
+  buffer_size: 25%
+  disp_bg_color: 0x000000
+#---------------------------------------------------
+  touchscreens:
+    - touchscreen_id: my_touchscreen
+#---------------------------------------------------
+  style_definitions:
+    - id: header_footer
+      align: CENTER
+      text_align: CENTER
+      bg_color: 0x000000
+      bg_opa: COVER
+      border_opa: TRANSP
+      radius: 0
+      pad_all: 0
+      pad_row: 0
+      pad_column: 0
+      outline_color: 0xA17716
+      outline_width: 2
+      text_font: montserrat_28
+      border_color: 0x000000
+      text_color: 0x323AA8
+      width: 90%
+      height: 50
+#---------------------------------------------------
+    - id: time_format
+      bg_color: 0x000000
+      bg_opa: COVER
+      border_opa: TRANSP
+      grid_cell_x_align: Stretch
+      grid_cell_y_align: CENTER
+      outline_color: 0xFFFF00
+      outline_width: 2
+      text_align: CENTER
+      align: CENTER
+      text_font: montserrat_48
+      border_color: 0x000000
+      text_color: 0x323AA8
+      width: 90%
+      height: 90%
+#---------------------------------------------------
+    - id: footer_button
+      width: 30%
+      bg_opa: TRANSP
+      border_opa: TRANSP
+      shadow_opa: TRANSP
+      pad_all: 0
+      outline_color: 0x00FF00
+      outline_width: 2
+#--------------------------------------------------------------------------------------------------
+  top_layer:
+    widgets:
+      - label:
+          id: date_label
+          styles: header_footer
+          text: "JAN 22"
+          align: top_right
+          width: 45%
+      - label:
+          id: day_label
+          styles: header_footer
+          text: "MON"
+          align: top_left
+          width: 45%
+      - button:
+          id: page_prev_button
+          styles: footer_button
+          align: bottom_left
+          on_press:
+            then:
+              lvgl.page.previous:
+          widgets:
+            - label:
+                id: page_prev
+                styles: header_footer
+                text: "\uF053"
+      - button:
+          id: page_home_button
+          styles: footer_button
+          align: bottom_mid
+          on_press:
+            then:
+              lvgl.page.show: main_page
+          widgets:
+            - label:
+                id: page_home
+                styles: header_footer
+                text: "\uF015"
+      - button:
+          id: page_next_button
+          styles: footer_button
+          align: bottom_right
+          on_press:
+            then:
+              lvgl.page.next:
+          widgets:
+            - label:
+                id: page_next
+                styles: header_footer
+                text: "\uF054"
+  #--------------------------------------------------------------------------------------------------
+  pages:
+    - id: main_page
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 770
+            height: 370
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: 2
+            outline_color: 0xFF0000
+            layout:
+              type: grid
+              grid_columns: [FR(1)]
+              grid_rows: [FR(1)]
+            widgets:
+              - label:
+                  id: display_time
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  text: "--:--"
+                  styles: time_format
+#--------------------------------------------------------------------------------------------------
+script:
+# This script updates the time
+#            snprintf(time_buf, sizeof(time_buf), "%2d:%02d%s", hour_12, now.minute, is_pm ? "pm" : "am"); // This does have the ap/pm flag
+  - id: time_update
+    then:
+      - lvgl.label.update:
+          id:
+            - display_time
+          text: !lambda |-
+            static char time_buf[17];
+            auto now = id(esptime).now();            
+            bool is_pm = now.hour >= 12;
+            int hour_12 = now.hour % 12;
+            if (hour_12 == 0) {
+                hour_12 = 12;
+            }
+            snprintf(time_buf, sizeof(time_buf), "%2d:%02d", hour_12, now.minute); // This does NOT have the ap/pm flag
+            return time_buf;
+#---------------------------------------------------
+#This script updates the Day and Date
+  - id: date_update
+    then:
+      - lvgl.label.update:
+          id: 
+            - date_label
+          text: !lambda |-
+            static const char * const mon_names[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
+            static char date_buf[8];
+            auto now = id(esptime).now();
+            snprintf(date_buf, sizeof(date_buf), "%s %2d", mon_names[now.month-1], now.day_of_month);
+            return date_buf;
+      - lvgl.label.update:
+          id:
+            -  day_label
+          text: !lambda |-
+            static const char * const day_names[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+            return day_names[id(esptime).now().day_of_week - 1];
+#---------------------------------------------------------------------------------------------------
