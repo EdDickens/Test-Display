@@ -6,6 +6,10 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   name_add_mac_suffix: false
+  on_boot:
+    priority: -100
+    then:
+      - script.execute: backlight_timer
 
 esp32:
   board: esp32-s3-devkitc-1
@@ -182,8 +186,9 @@ touchscreen:
     number: 1
     mode: output
   on_touch:
-    - switch.turn_on: backlight_switch
     - script.execute: time_update
+    - script.stop: backlight_timer
+    - script.execute: backlight_timer
     - lvgl.resume:
     - lvgl.widget.redraw:
     - lambda: |-
@@ -254,7 +259,7 @@ lvgl:
     widgets:
         - obj:
             align: top_mid
-            width: 770
+            width: 790
             height: 50
             pad_all: 0
             bg_opa: TRANSP
@@ -267,21 +272,21 @@ lvgl:
               grid_rows: [FR(1)]
             widgets:
               - label:
-                  id: date_label
+                  id: day_label
                   styles: header_footer
-                  text: "JAN 22"
+                  text: "Fri"
                   grid_cell_column_pos: 0
                   grid_cell_row_pos: 0
               - label:
-                  id: day_label
+                  id: date_label
                   styles: header_footer
-                  text: "MON"
+                  text: "Oct 13"
                   grid_cell_column_pos: 1
                   grid_cell_row_pos: 0
 #---------------------------------------------------
         - obj:
             align: bottom_mid
-            width: 770
+            width: 790
             height: 50
             pad_all: 0
             bg_opa: TRANSP
@@ -342,7 +347,7 @@ lvgl:
       widgets:
         - obj:
             align: CENTER
-            width: 770
+            width: 790
             height: 370
             bg_opa: TRANSP
             border_opa: TRANSP
@@ -359,7 +364,7 @@ lvgl:
                   grid_cell_row_pos: 0
                   text: "--:--"
                   styles: time_format
-#--------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 script:
 # This script updates the time
 #            snprintf(time_buf, sizeof(time_buf), "%2d:%02d%s", hour_12, now.minute, is_pm ? "pm" : "am"); // This does have the ap/pm flag
@@ -397,4 +402,11 @@ script:
           text: !lambda |-
             static const char * const day_names[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
             return day_names[id(esptime).now().day_of_week - 1];
+#-------------------------------------------------------
+# This script will turn off the backlight after the "Backlight Off" time expires
+  - id: backlight_timer
+    then:
+    - switch.turn_on: backlight_switch
+    - delay: 120s
+    - switch.turn_off: backlight_switch
 #---------------------------------------------------------------------------------------------------
