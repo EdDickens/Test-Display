@@ -1,0 +1,969 @@
+substitutions:
+  name: "test-display"
+  friendly_name: Test Display
+  trending_up: "\U000F0535" # mdi:trending-up
+  trending_down: "\U000F0533" # mdi:trending-up
+  steady: "\U000F0534" # mdi:trending-neutral
+  Outlines: "0" # Setting to 0 will disable all Outlines.
+#---------------------------------------------------------------------------------------------------
+  
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: false
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: y
+      CONFIG_ESP32S3_DATA_CACHE_64KB: y
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
+      CONFIG_SPIRAM_RODATA: y
+
+# Enable logging
+logger:
+  logs:
+    component: ERROR
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret haapi_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  manual_ip:
+    static_ip: 10.0.0.230
+    gateway: 10.0.0.1
+    subnet: 255.255.255.0
+    dns1: 75.75.75.75
+    dns2: 75.75.76.76
+  
+  fast_connect: off
+
+# Enable fallback hotspot (captive portal) in case wifi connection fails
+#  ap:
+#    ssid: "${friendly_name} Fallback"
+#    password: !secret haapi_password
+#--------------------------------------------------------------------------------------------------
+#web_server:
+#--------------------------------------------------------------------------------------------------
+#captive_portal:
+#--------------------------------------------------------------------------------------------------
+psram:
+  mode: octal
+  speed: 80MHz
+#--------------------------------------------------------------------------------------------------
+i2c:
+  - id: i2cbus_a
+    sda: GPIO08
+    scl: GPIO09
+    scan: True
+#--------------------------------------------------------------------------------------------------
+ch422g:
+  - i2c_id: i2cbus_a
+    id: ch422g_hub
+#--------------------------------------------------------------------------------------------------
+udp:
+  binary_sensors:
+    - clock_page_turn
+#--------------------------------------------------------------------------------------------------
+binary_sensor:
+  - platform: udp
+    provider: ir-receiver
+    id: clock_page_turn
+    on_press:
+      then:
+        - lvgl.page.next
+        - script.stop: return_home
+        - script.execute: return_home
+#-----------------------------------------------------------------------------
+switch:
+  - platform: restart
+    name: "${friendly_name} Restart"
+#---------------------------------------------------
+  - platform: gpio
+    name: ${friendly_name} Backlight
+    id: backlight_switch
+    pin:
+      ch422g: ch422g_hub
+      number: 2
+      allow_other_uses: true
+      mode:
+        output: true
+    inverted: false
+    restore_mode: ALWAYS_ON
+#--------------------------------------------------------------------------------------------------
+sensor:
+- platform: wifi_signal
+  name: "${friendly_name} Signal Strength"
+  update_interval: 60s
+#---------------------------------------------------
+- platform: homeassistant
+  id: office_brightness
+  entity_id: sensor.eddys_office_ambient_light
+  on_value:
+    then:
+    - if:
+        condition:
+          lambda: 'return (x < (id(display_threshold).state));'
+        then:
+          - switch.turn_off: backlight_switch
+        else:
+          - switch.turn_on: backlight_switch
+#------------------------
+  on_value_range: 
+    - below: 1.50
+      then:
+        - number.set:
+            id: clock_text_opacity
+            value: 65
+#------------------------
+    - above: 1.51
+      below: 2.50
+      then:
+        - number.set:
+            id: clock_text_opacity
+            value: 75
+#------------------------
+    - above: 2.51
+      below: 4.00
+      then:
+        - number.set:
+            id: clock_text_opacity
+            value: 85
+#------------------------
+    - above: 4.01
+      then:
+        - number.set:
+            id: clock_text_opacity
+            value: 100
+#--------------------------------------
+- platform: homeassistant
+  id: livingroom_temperature
+  entity_id: sensor.eddys_office_scd30_temperature
+  unit_of_measurement: "°F"
+  state_class: measurement
+  device_class: temperature
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: indoor_temp
+        text:
+          format: "%.0f°F"
+          args: [ 'x' ]
+#--------------------------------------
+- platform: homeassistant
+  id: livingroom_humidity
+  entity_id: sensor.eddys_office_scd30_humidity
+  unit_of_measurement: "%"
+  state_class: measurement
+  device_class: humidity
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: indoor_humidity
+        text:
+          format:  "%.0f%%"
+          args: [ 'x' ]  
+#--------------------------------------
+- platform: homeassistant
+  id: ecowitt_outdoor_temperature
+  entity_id: sensor.outdoor_temperature
+  unit_of_measurement: "°F"
+  state_class: measurement
+  device_class: temperature
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: outdoor_temp
+        text:
+          format: "%.0f°F"
+          args: [ 'x' ]
+#--------------------------------------
+- platform: homeassistant
+  id: ecowitt_outdoor_humidity
+  entity_id: sensor.humidity_3
+  unit_of_measurement: "%"
+  state_class: measurement
+  device_class: humidity
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: outdoor_humidity
+        text:
+          format:  "%.0f%%"
+          args: [ 'x' ]  
+#--------------------------------------
+- platform: homeassistant
+  id: home_pressure
+  entity_id: sensor.eddys_office_pressure
+  unit_of_measurement: "%"
+  state_class: measurement
+  device_class: pressure
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: home_pressure_display
+        text:
+          format:  "%.2f"
+          args: [ 'x' ]  
+#------------------------
+  on_value_range: 
+    - below: 29.40 # Very Low
+      then:
+        - lvgl.label.update:
+            id: home_pressure_display
+            text_color: 0x000000
+            bg_color: 0xC60000
+#------------------------
+    - above: 29.41 # Low
+      below: 29.70
+      then:
+        - lvgl.label.update:
+            id: home_pressure_display
+            text_color: 0x000000
+            bg_color: 0xFF8000
+#------------------------
+    - above: 29.71 # A Littel Low
+      below: 29.90
+      then:
+        - lvgl.label.update:
+            id: home_pressure_display
+            text_color: 0x000000
+            bg_color: 0xE6E600
+#------------------------
+    - above: 29.91 # Normal
+      below: 30.10
+      then:
+        - lvgl.label.update:
+            id: home_pressure_display
+            text_color: 0x000000
+            bg_color: 0x00AA00
+#------------------------
+    - above: 30.11 # A Little High
+      below: 30.30
+      then:
+        - lvgl.label.update:
+            id: home_pressure_display
+            text_color: 0x000000
+            bg_color: 0xE6E600
+#------------------------
+    - above: 30.31 # High
+      below: 30.50
+      then:
+        - lvgl.label.update:
+            id: home_pressure_display
+            text_color: 0x000000
+            bg_color: 0xFF8000
+#------------------------
+    - above: 30.51 # Very High
+      then:
+        - lvgl.label.update:
+            id: home_pressure_display
+            text_color: 0x000000
+            bg_color: 0xC60000
+#--------------------------------------
+- platform: homeassistant
+  id: pressure_trend
+  entity_id: sensor.avg_pressure_trend
+  unit_of_measurement: ""
+  state_class: measurement
+  device_class: humidity
+  internal: true
+  on_value_range: 
+    - below: -0.030 #Falling Fast
+      then:
+        - lvgl.label.update:
+            id: home_pressure_trend
+            text: $trending_down
+            text_color: 0xFF0000
+#------------------------
+    - above: -0.029 #Falling
+      below: -0.020
+      then:
+        - lvgl.label.update:
+            id: home_pressure_trend
+            text: $trending_down
+            text_color: 0xFF8000
+#------------------------
+    - above: -0.019 # Slowly Falling
+      below: -0.010
+      then:
+        - lvgl.label.update:
+            id: home_pressure_trend
+            text: $trending_down
+            text_color: 0xE6E600
+#------------------------
+    - above: -0.009 # Steady
+      below: 0.010
+      then:
+        - lvgl.label.update:
+            id: home_pressure_trend
+            text: $steady
+            text_color: 0xFFFFFF
+#------------------------
+    - above: 0.011 # Slowly Rising
+      below: 0.020
+      then:
+        - lvgl.label.update:
+            id: home_pressure_trend
+            text: $trending_up
+            text_color: 0xE6E600
+#------------------------
+    - above: 0.021 # Rising
+      below: 0.030
+      then:
+        - lvgl.label.update:
+            id: home_pressure_trend
+            text: $trending_up
+            text_color: 0xFF8000
+#------------------------
+    - above: 0.031 # Rising Fast
+      then:
+        - lvgl.label.update:
+            id: home_pressure_trend
+            text: $trending_up
+            text_color: 0xFF0000
+#--------------------------------------------------------------------------------------------------
+number:
+  - platform: template
+    name: Screen Lux Threshold
+    optimistic: true
+    id: display_threshold
+    unit_of_measurement: "lx"
+    initial_value: .5
+    restore_value: true
+    min_value: 0
+    max_value: 1000
+    step: 0.1
+    mode: box
+#--------------------------------------------
+  - platform: template
+    name: Text Opacity
+    optimistic: true
+    id: clock_text_opacity
+    unit_of_measurement: "%"
+    initial_value: 100
+    restore_value: true
+    min_value: 1
+    max_value: 100
+    step: 1
+    mode: box
+    on_value: 
+      then:
+        - lvgl.label.update:
+            id: 
+              - day_label
+              - date_label
+              - page_prev
+              - page_home
+              - page_next
+              - display_time
+              - indoor_enviro_label
+              - indoor_temp
+              - indoor_humidity
+              - outdoor_enviro_label
+              - outdoor_temp
+              - outdoor_humidity
+              - pressure_enviro_label
+#              - home_pressure_display
+              - home_pressure_trend
+            text_opa: !lambda return id(clock_text_opacity).state / 100 * 255;
+                      # Desired value needs to be scaled from a percent, then to a 0-255 range
+        - lvgl.label.update:
+            id: 
+              - home_pressure_display
+            bg_opa: !lambda return id(clock_text_opacity).state / 100 * 255;
+#        - lvgl.label.update:
+#            id: 
+#              - display_pm25_id
+#            text_opa: !lambda return (id(clock_text_opacity).state - 15) / 100 * 255;
+                      # Desired value needs to be scaled from a percent, then to a 0-255 range
+#--------------------------------------------------------------------------------------------------
+text_sensor:
+- platform: wifi_info
+  ip_address:
+    name: ${friendly_name} IP
+  ssid:
+    name: ${friendly_name} SSID
+  bssid:
+    name: ${friendly_name} BSSID
+  mac_address:
+    name: ${friendly_name} Mac
+#--------------------------------------------------------------------------------------------------
+time:
+  - platform: homeassistant
+    id: esptime
+    on_time_sync:
+      - script.execute: time_update
+      - script.execute: date_update
+    on_time:
+      - minutes: '*'
+        seconds: 0
+        then:
+          - script.execute: time_update
+      - hours: 0
+        minutes: 0
+        seconds: 0
+        then:
+          - script.execute: date_update
+#---------------------------------------------------------------------------------------------------
+font:
+  - file:
+      type: gfonts
+      family: Concert One
+      weight: regular
+    id: concert_34
+    size: 34
+    bpp: 4
+    extras:
+      - file: "gfonts://Concert One"
+        glyphs: [µ,³]
+#    glyphs: [
+#      "0","1","2","3","4","5","6","7","8","9","-",".","%","F","°",
+#      "\u0020", #space
+#      "\u003A", #colon
+#      ]
+#---------------------------------------------------
+  - file:
+      type: gfonts
+      family: Concert One
+      weight: regular
+    id: two_cell
+    size: 150
+    bpp: 4
+    glyphs: [
+      "0","1","2","3","4","5","6","7","8","9",
+      "-",".","%","°",
+      "F","S","t","e","a","d","y",
+      "\u0020", #space
+      "\u003A", #colon
+      ]
+#---------------------------------------------------
+  - file:
+      type: gfonts
+      family: Concert One
+      weight: regular
+    id: page_label
+    size: 120
+    bpp: 4
+    glyphs: [
+      "0","1","2","3","4","5","6","7","8","9","-",".","%","°",
+      "F","I","n","d","o","r","O","u","t","P","e","s",
+      "\u0020", #space
+      "\u003A", #colon
+      ]
+#---------------------------------------------------
+  - file: "fonts/G7_Segment7_S5.ttf"
+    id: big_seven_seg
+    size: 270
+    bpp: 4
+    glyphs: [
+      "0","1","2","3","4","5","6","7","8","9","-",
+      "\u0020", #space
+      "\u003A", #colon
+      ]
+#---------------------------------------------------
+  - file: 'fonts/materialdesignicons-webfont.ttf' # http://materialdesignicons.com/cdn/7.4.47/ 
+    id: mat_des_icons
+    size: 150
+    bpp: 4
+    glyphs: [
+      "\U000F0535", # mdi:trending-up
+      "\U000F0533", # mdi:trending-up
+      "\U000F0534", # mdi:trending-neutral
+      ]          
+#---------------------------------------------------------------------------------------------------
+display:
+  - platform: rpi_dpi_rgb
+    id: my_display
+    auto_clear_enabled: false
+    update_interval: never
+    color_order: RGB
+    pclk_frequency: 16MHz
+    dimensions:
+      width: 800
+      height: 480
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 3
+    enable_pin:
+      ch422g: ch422g_hub
+      number: 2
+      allow_other_uses: true
+    de_pin:
+      number: 5
+    hsync_pin:
+      number: 46
+      ignore_strapping_warning: true
+    vsync_pin:
+      number: 3
+      ignore_strapping_warning: true
+    pclk_pin: 7
+    pclk_inverted: false
+    hsync_back_porch: 10 #30
+    hsync_front_porch: 20 #210 
+    hsync_pulse_width: 10 #30
+    vsync_back_porch: 10 #4
+    vsync_front_porch: 10 #4
+    vsync_pulse_width: 10 #4
+    data_pins:
+      red:
+        - 1         #r3
+        - 2         #r4
+        - 42        #r5
+        - 41        #r6
+        - 40        #r7
+      blue:
+        - 14        #b3
+        - 38        #b4
+        - 18        #b5
+        - 17        #b6
+        - 10        #b7
+      green:
+        - 39        #g2
+        - 0         #g3
+        - 45        #g4
+        - 48        #g5
+        - 47        #g6
+        - 21        #g7
+#--------------------------------------------------------------------------------------------------
+touchscreen:
+  platform: gt911
+  address: 0x5D
+  i2c_id: i2cbus_a
+  id: my_touchscreen
+  update_interval: 16ms
+  interrupt_pin: GPIO4
+  reset_pin:
+    ch422g: ch422g_hub
+    number: 1
+    mode: output
+  on_touch:
+    - script.execute: time_update
+    - lvgl.resume:
+    - lvgl.widget.redraw:
+    - lambda: |-
+          ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+              touch.x,
+              touch.y,
+              touch.x_raw,
+              touch.y_raw
+              );
+#--------------------------------------------------------------------------------------------------
+lvgl:
+  displays:
+    - my_display
+  buffer_size: 25%
+  disp_bg_color: 0x000000
+#---------------------------------------------------
+  touchscreens:
+    - touchscreen_id: my_touchscreen
+#---------------------------------------------------
+  style_definitions:
+    - id: header
+      align: CENTER
+      text_align: CENTER
+      grid_cell_x_align: Stretch
+      grid_cell_y_align: CENTER
+      bg_color: 0x000000 #0x2F8CD8
+      bg_opa: COVER
+      border_opa: TRANSP
+      radius: 0
+      pad_all: 0
+      pad_row: 0
+      pad_column: 0
+      text_font: concert_34
+      border_color: 0x000000 #0x0077b3
+      text_color: 0x323AA8
+#---------------------------------------------------
+    - id: footer
+      align: CENTER
+      text_align: CENTER
+      grid_cell_x_align: Stretch
+      grid_cell_y_align: CENTER
+      bg_color: 0x000000 #0x2F8CD8
+      bg_opa: COVER
+      border_opa: TRANSP
+      radius: 0
+      pad_all: 0
+      pad_row: 0
+      pad_column: 0
+      text_font: montserrat_28
+      border_color: 0x000000 #0x0077b3
+      text_color: 0x323AA8
+#---------------------------------------------------
+    - id: time_format
+      bg_color: 0x000000
+      bg_opa: COVER
+      border_opa: TRANSP
+      grid_cell_x_align: Stretch
+      grid_cell_y_align: CENTER
+      outline_color: 0xFFFF00
+      outline_width: ${Outlines}
+      text_align: CENTER
+      align: CENTER
+      text_font: big_seven_seg
+      border_color: 0x000000
+      text_color: 0x323AA8
+#---------------------------------------------------
+    - id: two_cell_style
+      grid_cell_x_align: STRETCH
+      grid_cell_y_align: CENTER
+      text_font: two_cell
+      text_color: 0x323AA8
+      text_align: CENTER
+      text_opa: 100%
+      pad_all: 0
+      pad_row: 0
+      pad_column: 0
+      outline_width: ${Outlines}
+      outline_color: 0xFFFF00
+      width: 95%
+#      height: 55%
+#      height: 160
+#---------------------------------------------------
+    - id: pressure_display_style
+      grid_cell_x_align: STRETCH
+      grid_cell_y_align: CENTER
+      text_font: two_cell
+      text_color: 0x000000
+      text_align: CENTER
+      text_opa: 100%
+      bg_color: 0x000000
+      bg_opa: 100%
+      radius: 20
+      pad_all: 0
+      pad_row: 0
+      pad_column: 0
+      outline_width: ${Outlines}
+      outline_color: 0xFF80FF
+      width: 95%
+#      height: 55%
+#      height: 160
+#---------------------------------------------------
+    - id: page_label_style
+      grid_cell_x_align: STRETCH
+      grid_cell_y_align: CENTER
+      text_font: page_label
+      text_color: 0x323AA8
+      text_align: CENTER
+      text_opa: 100%
+      pad_row: 0
+      pad_column: 0
+      pad_all: 0
+      outline_width: ${Outlines}
+      outline_color: 0xFF80FF
+      width: 95%
+      height: 40%
+#      height: 140
+#---------------------------------------------------
+    - id: footer_button
+      grid_cell_x_align: Stretch
+      grid_cell_y_align: CENTER
+      bg_opa: TRANSP
+      border_opa: TRANSP
+      shadow_opa: TRANSP
+      pad_all: 0
+      pad_row: 0
+      pad_column: 0
+      outline_color: 0x00FF00
+      outline_width: ${Outlines}
+#--------------------------------------------------------------------------------------------------
+# Day/Date display
+  top_layer:
+    widgets:
+        - obj:
+            align: top_mid
+            width: 790
+            height: 50
+            pad_all: 0
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1)]
+              grid_rows: [FR(1)]
+            widgets:
+              - label:
+                  id: day_label
+                  styles: header
+                  text: "Fri"
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  text_align: right
+              - label:
+                  id: date_label
+                  styles: header
+                  text: "Oct 13"
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 0
+                  text_align: left
+#---------------------------------------------------
+# Navigation buttons
+        - obj:
+            align: bottom_mid
+            width: 790
+            height: 50
+            pad_all: 0
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1),FR(1)]
+              grid_rows: [FR(1)]
+            widgets:
+              - button:
+                  id: page_prev_button
+                  styles: footer_button
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  on_press:
+                    then:
+                      lvgl.page.previous:
+                  widgets:
+                    - label:
+                        id: page_prev
+                        styles: footer
+                        text: "\uF053"
+              - button:
+                  id: page_home_button
+                  styles: footer_button
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 0
+                  on_press:
+                    then:
+                      lvgl.page.show: main_page
+                  widgets:
+                    - label:
+                        id: page_home
+                        styles: footer
+                        text: "\uF015"
+              - button:
+                  id: page_next_button
+                  styles: footer_button
+                  grid_cell_column_pos: 2
+                  grid_cell_row_pos: 0
+                  on_press:
+                    then:
+                      lvgl.page.next:
+                  widgets:
+                    - label:
+                        id: page_next
+                        styles: footer
+                        text: "\uF054"
+#--------------------------------------------------------------------------------------------------
+  pages:
+    - id: main_page
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 790
+            height: 370
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            pad_all: 0
+            x: 0
+            y: 0
+            layout:
+              type: grid
+              grid_columns: [FR(1)]
+              grid_rows: [FR(1)]
+            widgets:
+              - label:
+                  id: display_time
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  text: "--:--"
+                  styles: time_format
+#---------------------------------------------------
+    - id: indoor_enviro_page
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 790
+            height: 370
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            pad_all: 0
+            x: 0
+            y: 0
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1)]
+              grid_rows: [FR(1),FR(1)]
+              pad_column: 0
+              pad_row: 0
+            widgets:
+              - label:
+                  id: indoor_enviro_label
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  grid_cell_column_span: 2
+                  text: "Indoor"
+                  styles: page_label_style
+              - label:
+                  id: indoor_temp
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 1
+                  text: "00°F"
+                  styles: two_cell_style
+              - label:
+                  id: indoor_humidity
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 1
+                  text: "00%"
+                  styles: two_cell_style
+#---------------------------------------------------
+    - id: outdoor_enviro_page
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 790
+            height: 370
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            pad_all: 0
+            x: 0
+            y: 0
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1)]
+              grid_rows: [FR(1),FR(1)]
+              pad_column: 0
+              pad_row: 0
+            widgets:
+              - label:
+                  id: outdoor_enviro_label
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  grid_cell_column_span: 2
+                  text: "Outdoor"
+                  styles: page_label_style
+              - label:
+                  id: outdoor_temp
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 1
+                  text: "00°F"
+                  styles: two_cell_style
+              - label:
+                  id: outdoor_humidity
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 1
+                  text: "000%"
+                  styles: two_cell_style
+#---------------------------------------------------
+    - id: home_pressure_page
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 790
+            height: 370
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            pad_all: 0
+            x: 0
+            y: 0
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1)]
+              grid_rows: [FR(1),FR(1)]
+              pad_column: 0
+              pad_row: 0
+            widgets:
+              - label:
+                  id: pressure_enviro_label
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  grid_cell_column_span: 2
+                  text: "Pressure"
+                  styles: page_label_style
+              - label:
+                  id: home_pressure_display
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 1
+                  text: "30.00"
+                  styles: pressure_display_style
+              - label:
+                  id: home_pressure_trend
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 1
+                  text: $steady
+                  text_font: mat_des_icons
+                  text_color: 0x323AA8
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: CENTER
+                  align: CENTER
+                  text_align: CENTER
+                  outline_width: ${Outlines}
+                  outline_color: 0xFF80FF
+#---------------------------------------------------------------------------------------------------
+script:
+# This script updates the time
+#            snprintf(time_buf, sizeof(time_buf), "%2d:%02d%s", hour_12, now.minute, is_pm ? "pm" : "am"); // This does have the ap/pm flag
+  - id: time_update
+    then:
+      - lvgl.label.update:
+          id:
+            - display_time
+          text: !lambda |-
+            static char time_buf[17];
+            auto now = id(esptime).now();            
+            bool is_pm = now.hour >= 12;
+            int hour_12 = now.hour % 12;
+            if (hour_12 == 0) {
+                hour_12 = 12;
+            }
+            snprintf(time_buf, sizeof(time_buf), "%2d:%02d", hour_12, now.minute); // This does NOT have the ap/pm flag
+            return time_buf;
+#---------------------------------------------------
+#This script updates the Day and Date
+  - id: date_update
+    then:
+      - lvgl.label.update:
+          id: 
+            - date_label
+          text: !lambda |-
+            static const char * const mon_names[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
+            static char date_buf[8];
+            auto now = id(esptime).now();
+            snprintf(date_buf, sizeof(date_buf), "%s %2d", mon_names[now.month-1], now.day_of_month);
+            return date_buf;
+      - lvgl.label.update:
+          id:
+            -  day_label
+          text: !lambda |-
+            static const char * const day_names[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+            return day_names[id(esptime).now().day_of_week - 1];
+#---------------------------------------------------
+#This script returns to the main_page after 60 seconds of no page flips
+  - id: return_home
+    then:
+      - delay: 600s
+      - lvgl.page.show: main_page
+#---------------------------------------------------------------------------------------------------
