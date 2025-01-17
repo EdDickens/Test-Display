@@ -148,7 +148,7 @@ sensor:
             value: 100
 #--------------------------------------
 - platform: homeassistant
-  id: livingroom_temperature
+  id: office_temperature
   entity_id: sensor.eddys_office_scd30_temperature
   unit_of_measurement: "°F"
   state_class: measurement
@@ -162,7 +162,7 @@ sensor:
           args: [ 'x' ]
 #--------------------------------------
 - platform: homeassistant
-  id: livingroom_humidity
+  id: office_humidity
   entity_id: sensor.eddys_office_scd30_humidity
   unit_of_measurement: "%"
   state_class: measurement
@@ -177,7 +177,7 @@ sensor:
 #--------------------------------------
 - platform: homeassistant
   id: ecowitt_outdoor_temperature
-  entity_id: sensor.outdoor_temperature
+  entity_id: sensor.ecowitt_outdoor_temperature # Ecowitt
   unit_of_measurement: "°F"
   state_class: measurement
   device_class: temperature
@@ -191,7 +191,7 @@ sensor:
 #--------------------------------------
 - platform: homeassistant
   id: ecowitt_outdoor_humidity
-  entity_id: sensor.humidity_3
+  entity_id: sensor.ecowitt_humidity # Ecowitt
   unit_of_measurement: "%"
   state_class: measurement
   device_class: humidity
