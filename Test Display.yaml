@@ -40,12 +40,12 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
-  manual_ip:
-    static_ip: 10.0.0.230
-    gateway: 10.0.0.1
-    subnet: 255.255.255.0
-    dns1: 75.75.75.75
-    dns2: 75.75.76.76
+#  manual_ip:
+#    static_ip: 10.0.0.230
+#    gateway: 10.0.0.1
+#    subnet: 255.255.255.0
+#    dns1: 75.75.75.75
+#    dns2: 75.75.76.76
   
   fast_connect: off
 
