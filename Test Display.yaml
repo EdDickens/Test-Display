@@ -1,9 +1,38 @@
 substitutions:
   name: "test-display"
   friendly_name: Test Display
+  
   trending_up: "\U000F0535" # mdi:trending-up
   trending_down: "\U000F0533" # mdi:trending-up
   steady: "\U000F0534" # mdi:trending-neutral
+  
+  firstquarter: "\U000F0F61" # mdi-moon-first-quarter
+  fullmoon: "\U000F0F62" # mdi-moon-full
+  lastquarter: "\U000F0F63" # mdi-moon-last-quarter
+  newmoon: "\U000F0F64" # mdi-moon-new
+  waningcrescent: "\U000F0F65" # mdi-moon-waning-crescent
+  waninggibbous: "\U000F0F66" # mdi-moon-waning-gibbous
+  waxingcrescent: "\U000F0F67" # mdi-moon-waxing-crescent
+  waxinggibbous: "\U000F0F68" # mdi-moon-waxing-gibbous
+  
+  clear_night: "\U000F0594" # mdi-weather-night
+  cloudy: "\U000F0590" # mdi-weather-cloudy
+  cloudy_alert: "\U000F0F2F" # mdi-weather-cloudy-alert
+  fog: "\U000F0591" # mdi-weather-fog
+  hail: "\U000F0592" # mdi-weather-hail
+  lightning: "\U000F0593" # mdi-weather-lightning
+  lightning_rainy: "\U000F067E" # mdi-weather-lightning-rainy
+  partly_cloudy: "\U000F0595" # mdi-weather-partly-cloudy
+  pouring: "\U000F0596" # mdi-weather-pouring
+  rainy: "\U000F0597" # mdi-weather-rainy
+  snowy: "\U000F0598" # mdi-weather-snowy
+  snowy_rainy: "\U000F067F" # mdi-weather-snowy-rainy
+  snowy_heavy: "\U000F0F36" # mdi-weather-snowy-heavy
+  sunny: "\U000F0599" # mdi-weather-sunny
+  windy: "\U000F059D" # mdi-weather-windy
+  windy_variant: "\U000F059E" # mdi-weather-windy-variant
+  sunny_off: "\U000F14E4" # mdi-weather-sunny-off
+
   Outlines: "0" # Setting to 0 will disable all Outlines.
 #---------------------------------------------------------------------------------------------------
   
@@ -184,7 +213,9 @@ sensor:
   internal: true
   on_value:
     - lvgl.label.update:
-        id: outdoor_temp
+        id:
+          - outdoor_temp
+          - lbl_weather_outdnoor_now
         text:
           format: "%.0f°F"
           args: [ 'x' ]
@@ -201,6 +232,50 @@ sensor:
         id: outdoor_humidity
         text:
           format:  "%.0f%%"
+          args: [ 'x' ]  
+#--------------------------------------
+- platform: homeassistant
+  id: outdoor_fells_like
+  entity_id: sensor.home_temperature_feels_like
+  unit_of_measurement: "%"
+  state_class: measurement
+  device_class: humidity
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: lbl_weather_forecast_tempap
+        text:
+          format:  "%.0f°F"
+          args: [ 'x' ]  
+#--------------------------------------
+- platform: homeassistant
+  id: outdoor_todays_max
+  entity_id: sensor.min_max_outdoor_temp
+  attribute: max_value
+  unit_of_measurement: "%"
+  state_class: measurement
+  device_class: humidity
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: lbl_weather_forecast_temphi
+        text:
+          format:  "%.0f°F"
+          args: [ 'x' ]  
+#--------------------------------------
+- platform: homeassistant
+  id: outdoor_todays_min
+  entity_id: sensor.min_max_outdoor_temp
+  attribute: min_value
+  unit_of_measurement: "%"
+  state_class: measurement
+  device_class: humidity
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: lbl_weather_forecast_templo
+        text:
+          format:  "%.0f°F"
           args: [ 'x' ]  
 #--------------------------------------
 - platform: homeassistant
@@ -399,6 +474,145 @@ text_sensor:
     name: ${friendly_name} BSSID
   mac_address:
     name: ${friendly_name} Mac
+#--------------------------------------------
+- platform: homeassistant
+  id: weather_description
+  internal: true
+  entity_id: sensor.home_weather_description
+  on_value: 
+    then:
+      - lvgl.label.update:
+          id: lbl_weather_forecast_condition_name
+          text: !lambda return id(weather_description).state;
+      - if:
+          condition:
+            lambda: 'return id(weather_description).state == "Mostly Cloudy" || id(weather_description).state == "Partly Cloudy" || id(weather_description).state == "Fair";'
+          then:
+            lvgl.label.update:
+              id: lbl_weather_forecast_condition_icon
+              text: "$partly_cloudy"
+      - if:
+          condition:
+            lambda: 'return id(weather_description).state == "Cloudy";'
+          then:
+            lvgl.label.update:
+              id: lbl_weather_forecast_condition_icon
+              text: "$cloudy"
+      - if:
+          condition:
+            lambda: 'return id(weather_description).state == "Snow";'
+          then:
+            lvgl.label.update:
+              id: lbl_weather_forecast_condition_icon
+              text: "$snowy_heavy"
+      - if:
+          condition:
+            lambda: 'return id(weather_description).state == "Snow Shower";'
+          then:
+            lvgl.label.update:
+              id: lbl_weather_forecast_condition_icon
+              text: "$snowy"
+      - if:
+          condition:
+            lambda: 'return id(weather_description).state == "Clear" || id(weather_description).state == "Sunny";'
+          then:
+            lvgl.label.update:
+              id: lbl_weather_forecast_condition_icon
+              text: "$sunny"
+      - if:
+          condition:
+            lambda: 'return id(weather_description).state == "Cloudy/Wind";'
+          then:
+            lvgl.label.update:
+              id: lbl_weather_forecast_condition_icon
+              text: "$windy_variant"
+#--------------------------------------------
+- platform: homeassistant
+  id: moon_phase
+  internal: true
+  entity_id: sensor.moon
+  on_value: 
+    then:
+      - if:
+          condition:
+            lambda: 'return id(moon_phase).state == "new_moon";'
+          then:
+            - lvgl.label.update:
+                id: lbl_moon_phase_glyph
+                text: "$newmoon"
+            - lvgl.label.update:
+                id: lbl_moon_phase
+                text: "New Moon"
+      - if:
+          condition:
+            lambda: 'return id(moon_phase).state == "waxing_crescent";'
+          then:
+            - lvgl.label.update:
+                id: lbl_moon_phase_glyph
+                text: "$waxingcrescent"
+            - lvgl.label.update:
+                id: lbl_moon_phase
+                text: "Waxing Cresent"
+      - if:
+          condition:
+            lambda: 'return id(moon_phase).state == "first_quarter";'
+          then:
+            - lvgl.label.update:
+                id: lbl_moon_phase_glyph
+                text: "$firstquarter"
+            - lvgl.label.update:
+                id: lbl_moon_phase
+                text: "First Quarter"
+      - if:
+          condition:
+            lambda: 'return id(moon_phase).state == "waxing_gibbous";'
+          then:
+            - lvgl.label.update:
+                id: lbl_moon_phase_glyph
+                text: "$waxinggibbous"
+            - lvgl.label.update:
+                id: lbl_moon_phase
+                text: "Waxing Gibbous"
+      - if:
+          condition:
+            lambda: 'return id(moon_phase).state == "full_moon";'
+          then:
+            - lvgl.label.update:
+                id: lbl_moon_phase_glyph
+                text: "$fullmoon"
+            - lvgl.label.update:
+                id: lbl_moon_phase
+                text: "Full Moon"
+      - if:
+          condition:
+            lambda: 'return id(moon_phase).state == "waning_gibbous";'
+          then:
+            - lvgl.label.update:
+                id: lbl_moon_phase_glyph
+                text: "$waninggibbous"
+            - lvgl.label.update:
+                id: lbl_moon_phase
+                text: "Waning Gibbous"
+      - if:
+          condition:
+            lambda: 'return id(moon_phase).state == "last_quarter";'
+          then:
+            - lvgl.label.update:
+                id: lbl_moon_phase_glyph
+                text: "$lastquarter"
+            - lvgl.label.update:
+                id: lbl_moon_phase
+                text: "Last Quarter"
+      - if:
+          condition:
+            lambda: 'return id(moon_phase).state == "waning_crescent";'
+          then:
+            - lvgl.label.update:
+                id: lbl_moon_phase_glyph
+                text: "$waningcrescent"
+            - lvgl.label.update:
+                id: lbl_moon_phase
+                text: "Waining Cresent"
 #--------------------------------------------------------------------------------------------------
 time:
   - platform: homeassistant
@@ -457,10 +671,21 @@ font:
     size: 120
     bpp: 4
     glyphs: [
-      "0","1","2","3","4","5","6","7","8","9","-",".","%","°",
-      "F","I","n","d","o","r","O","u","t","P","e","s",
+      "P","r","e","s","u","O","t","d","o","I","n",
       "\u0020", #space
       "\u003A", #colon
+      ]
+#---------------------------------------------------
+  - file:
+      type: gfonts
+      family: Concert One
+      weight: regular
+    id: moon_phase_font
+    size: 80
+    bpp: 4
+    glyphs: [
+      "N","e","w","M","o","n","W","a","x","i","g","C","r","s","c","t","F","Q","u","G","b","l","L",
+      "\u0020", #space
       ]
 #---------------------------------------------------
   - file: "fonts/G7_Segment7_S5.ttf"
@@ -482,6 +707,46 @@ font:
       "\U000F0533", # mdi:trending-up
       "\U000F0534", # mdi:trending-neutral
       ]          
+#---------------------------------------------------
+  - file: 'fonts/materialdesignicons-webfont.ttf' # http://materialdesignicons.com/cdn/7.4.47/ 
+    id: weather_icons
+    size: 100
+    bpp: 4
+    glyphs: [
+      "\U000F0594", # clear-night
+      "\U000F0590", # cloudy
+      "\U000F0F2F", # cloudy-alert
+      "\U000F0591", # fog
+      "\U000F0592", # hail
+      "\U000F0593", # lightning
+      "\U000F067E", # lightning-rainy
+      "\U000F0595", # partlycloudy
+      "\U000F0596", # pouring
+      "\U000F0597", # rainy
+      "\U000F0598", # snowy
+      "\U000F067F", # snowy-rainy
+      "\U000F0F36", # snowy-heavy
+      "\U000F0599", # sunny
+      "\U000F059D", # windy
+      "\U000F059E", # windy-variant
+      "\U000F14E4", # sunny-off
+      ]
+# Fair, Partly Cloudy, Mostly Cloudy, Cloudy, Snow, Snow Shower, Sunny, Clear, Cloudy/Wind
+#---------------------------------------------------
+  - file: 'fonts/materialdesignicons-webfont.ttf' # http://materialdesignicons.com/cdn/7.4.47/ 
+    id: moon_icons
+    size: 200
+    bpp: 4
+    glyphs: [
+      "\U000F0F61", # moon-first-quarter
+      "\U000F0F62", # moon-full
+      "\U000F0F63", # moon-last-quarter
+      "\U000F0F64", # moon-new
+      "\U000F0F65", # moon-waning-crescent
+      "\U000F0F66", # moon-waning-gibbous
+      "\U000F0F67", # moon-waxing-crescent
+      "\U000F0F68", # moon-waxing-gibbous
+      ]
 #---------------------------------------------------------------------------------------------------
 display:
   - platform: rpi_dpi_rgb
@@ -922,6 +1187,137 @@ lvgl:
                   text_align: CENTER
                   outline_width: ${Outlines}
                   outline_color: 0xFF80FF
+#---------------------------------------------------
+    - id: weather_forecast
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 228
+            height: 250
+            pad_all: 10
+            layout:
+              pad_column: 0
+              type: GRID
+              grid_rows: [FR(48), FR(13), FR(13), FR(13), FR(13)]
+              grid_columns: [FR(10), FR(40), FR(40), FR(10)]
+            widgets:
+              - label:
+                  text: "$sunny_off"
+                  id: lbl_weather_forecast_condition_icon
+                  text_font: weather_icons
+                  text_align: CENTER
+                  grid_cell_row_pos: 0
+                  grid_cell_column_pos: 0
+                  grid_cell_column_span: 2
+                  grid_cell_x_align: CENTER
+                  grid_cell_y_align: START
+
+              - label:
+                  text: "Unknown"
+                  id: lbl_weather_forecast_condition_name
+                  text_align: CENTER
+                  grid_cell_row_pos: 0
+                  grid_cell_column_pos: 2
+                  grid_cell_column_span: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: CENTER
+
+              - label:
+                  text: "Feels like:"
+                  grid_cell_row_pos: 1
+                  grid_cell_column_pos: 1
+
+              - label:
+                  text: "--.- °F"
+                  id: lbl_weather_forecast_tempap
+                  text_align: RIGHT
+                  grid_cell_row_pos: 1
+                  grid_cell_column_pos: 2
+                  grid_cell_x_align: STRETCH
+
+              - label:
+                  text: "Maximum:"
+                  grid_cell_row_pos: 2
+                  grid_cell_column_pos: 1
+
+              - label:
+                  text: "--.- °F"
+                  id: lbl_weather_forecast_temphi
+                  text_align: RIGHT
+                  grid_cell_row_pos: 2
+                  grid_cell_column_pos: 2
+                  grid_cell_x_align: STRETCH
+
+              - label:
+                  text: "Minimum:"
+                  grid_cell_row_pos: 3
+                  grid_cell_column_pos: 1
+
+              - label:
+                  text: "--.- °F"
+                  id: lbl_weather_forecast_templo
+                  text_align: RIGHT
+                  grid_cell_row_pos: 3
+                  grid_cell_column_pos: 2
+                  grid_cell_x_align: STRETCH
+
+              - label:
+                  text: "Now:"
+                  grid_cell_row_pos: 4
+                  grid_cell_column_pos: 1
+
+              - label:
+                  text: "--.- °C"
+                  id: lbl_weather_outdnoor_now
+                  text_align: RIGHT
+                  grid_cell_row_pos: 4
+                  grid_cell_column_pos: 2
+                  grid_cell_x_align: STRETCH
+#---------------------------------------------------
+    - id: moon_page
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 790
+            height: 370
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            pad_all: 0
+            x: 0
+            y: 0
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1)]
+              grid_rows: [FR(1)]
+            widgets:
+              - label:
+                  id: lbl_moon_phase_glyph
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  text: "$newmoon"
+                  text_font: moon_icons
+                  text_color: 0x323AA8
+                  text_align: CENTER
+                  grid_cell_x_align: Stretch
+                  grid_cell_y_align: CENTER
+                  outline_color: 0xFF80FF
+                  outline_width: $Outlines
+              - label:
+                  id: lbl_moon_phase
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 0
+                  text: "Unknown"
+                  text_font: moon_phase_font
+                  text_color: 0x323AA8
+                  text_align: CENTER
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: CENTER
+                  outline_color: 0xFF80FF
+                  outline_width: $Outlines
 #---------------------------------------------------------------------------------------------------
 script:
 # This script updates the time
