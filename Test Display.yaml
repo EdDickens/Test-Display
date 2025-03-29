@@ -276,7 +276,35 @@ sensor:
         id: lbl_weather_forecast_templo
         text:
           format:  "%.0f°F"
-          args: [ 'x' ]  
+          args: [ 'x' ]
+#--------------------------------------
+- platform: homeassistant
+  id: printer_voc
+  entity_id: sensor.printer_display_printer_display_voc
+  unit_of_measurement: "ppb"
+  state_class: measurement
+  device_class: VOLATILE_ORGANIC_COMPOUNDS_PARTS
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: lbl_printer_voc
+        text:
+          format:  "%.0f"
+          args: [ 'x' ]
+#--------------------------------------
+- platform: homeassistant
+  id: office_voc
+  entity_id: sensor.eddys_office_eddys_office_voc
+  unit_of_measurement: "ppb"
+  state_class: measurement
+  device_class: VOLATILE_ORGANIC_COMPOUNDS_PARTS
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: lbl_office_voc
+        text:
+          format:  "%.0f"
+          args: [ 'x' ]
 #--------------------------------------
 - platform: homeassistant
   id: home_pressure
@@ -450,7 +478,7 @@ number:
               - outdoor_temp
               - outdoor_humidity
               - pressure_enviro_label
-#              - home_pressure_display
+              - time_label
               - home_pressure_trend
             text_opa: !lambda return id(clock_text_opacity).state / 100 * 255;
                       # Desired value needs to be scaled from a percent, then to a 0-255 range
@@ -671,7 +699,9 @@ font:
     size: 120
     bpp: 4
     glyphs: [
-      "P","r","e","s","u","O","t","d","o","I","n",
+      "P","r","e","s","u","O","t","d","o","I","n","f","i","c","V","C","a",
+      "0","1","2","3","4","5","6","7","8","9",
+      "-",
       "\u0020", #space
       "\u003A", #colon
       ]
@@ -814,6 +844,7 @@ touchscreen:
     number: 1
     mode: output
   on_touch:
+    - switch.turn_on: backlight_switch
     - script.execute: time_update
     - lvgl.resume:
     - lvgl.widget.redraw:
@@ -958,21 +989,28 @@ lvgl:
             outline_color: 0xFF0000
             layout:
               type: grid
-              grid_columns: [FR(1),FR(1)]
+              grid_columns: [FR(50),FR(25),FR(25)]
               grid_rows: [FR(1)]
             widgets:
+              - label:
+                  id: time_label
+                  styles: header
+                  text: "--:--"
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  text_align: CENTER
               - label:
                   id: day_label
                   styles: header
                   text: "Fri"
-                  grid_cell_column_pos: 0
+                  grid_cell_column_pos: 1
                   grid_cell_row_pos: 0
                   text_align: right
               - label:
                   id: date_label
                   styles: header
                   text: "Oct 13"
-                  grid_cell_column_pos: 1
+                  grid_cell_column_pos: 2
                   grid_cell_row_pos: 0
                   text_align: left
 #---------------------------------------------------
@@ -1318,6 +1356,59 @@ lvgl:
                   grid_cell_y_align: CENTER
                   outline_color: 0xFF80FF
                   outline_width: $Outlines
+#---------------------------------------------------
+    - id: office_voc_page
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 790
+            height: 370
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            pad_all: 0
+            x: 0
+            y: 0
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1)]
+              grid_rows: [FR(40),FR(40),FR(20)]
+              pad_column: 0
+              pad_row: 0
+            widgets:
+              - label:
+                  id: office_voc_label
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  grid_cell_column_span: 2
+                  text: "Office VOC"
+                  styles: page_label_style
+              - label:
+                  id: lbl_printer_voc
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 1
+                  text: "---"
+                  styles: page_label_style
+              - label:
+                  id: lbl_office_voc
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 1
+                  text: "---"
+                  styles: page_label_style
+              - label:
+                  id: lbl_printer_vocid
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 2
+                  text: "Printer"
+                  styles: header
+              - label:
+                  id: lbl_office_vocid
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 2
+                  text: "Office"
+                  styles: header
 #---------------------------------------------------------------------------------------------------
 script:
 # This script updates the time
@@ -1327,6 +1418,7 @@ script:
       - lvgl.label.update:
           id:
             - display_time
+            - time_label
           text: !lambda |-
             static char time_buf[17];
             auto now = id(esptime).now();            
