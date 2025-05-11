@@ -3,9 +3,13 @@ substitutions:
   friendly_name: Test Display
   
   trending_up: "\U000F0535" # mdi:trending-up
-  trending_down: "\U000F0533" # mdi:trending-up
+  trending_down: "\U000F0533" # mdi:trending-down
   steady: "\U000F0534" # mdi:trending-neutral
-  
+  heater_on: "\U000F0438" # mdi:radiator
+  fan: "\U000F0210" # mdi:fan
+  floor_lamp: "\U000F08DD" # mdi:floor-lamp
+  humidifier_icon: "\U000F1099" # mdi-air-humidifier
+
   firstquarter: "\U000F0F61" # mdi-moon-first-quarter
   fullmoon: "\U000F0F62" # mdi-moon-full
   lastquarter: "\U000F0F63" # mdi-moon-last-quarter
@@ -107,6 +111,50 @@ binary_sensor:
         - lvgl.page.next
         - script.stop: return_home
         - script.execute: return_home
+#---------------------------------------------------
+  - platform: homeassistant
+    id: heater_toggle
+    entity_id: switch.office_heater
+    publish_initial_state: true
+    on_state:
+      then:
+        lvgl.widget.update:
+          id: office_heater_button
+          state:
+            checked: !lambda return x;
+#---------------------------------------------------
+  - platform: homeassistant
+    id: laptop_fan_toggle
+    entity_id: switch.power_relays_relay_3
+    publish_initial_state: true
+    on_state:
+      then:
+        lvgl.widget.update:
+          id: laptop_fan_button
+          state:
+            checked: !lambda return x;
+#---------------------------------------------------
+  - platform: homeassistant
+    id: office_lamp_toggle
+    entity_id: light.wiz_dimmable_white_37b080
+    publish_initial_state: true
+    on_state:
+      then:
+        lvgl.widget.update:
+          id: office_lamp_button
+          state:
+            checked: !lambda return x;
+#---------------------------------------------------
+  - platform: homeassistant
+    id: office_humidifier_control
+    entity_id: automation.new_office_humidity_control
+    publish_initial_state: true
+    on_state:
+      then:
+        lvgl.widget.update:
+          id: office_humidifier_button
+          state:
+            checked: !lambda return x;
 #-----------------------------------------------------------------------------
 switch:
   - platform: restart
@@ -123,6 +171,30 @@ switch:
         output: true
     inverted: false
     restore_mode: ALWAYS_ON
+#-----------------------------------------------------
+  - platform: template
+    name: Antiburn
+    id: switch_antiburn
+    icon: mdi:television-shimmer
+    optimistic: true
+    entity_category: "config"
+    turn_on_action:
+      - logger.log: "Starting Antiburn"
+      - if:
+          condition: lvgl.is_paused
+          then:
+            - lvgl.resume:
+            - lvgl.widget.redraw:
+            - delay: 1s
+      - lvgl.pause:
+          show_snow: true
+    turn_off_action:
+      - logger.log: "Stopping Antiburn"
+      - if:
+          condition: lvgl.is_paused
+          then:
+            - lvgl.resume:
+            - lvgl.widget.redraw:
 #--------------------------------------------------------------------------------------------------
 sensor:
 - platform: wifi_signal
@@ -651,6 +723,63 @@ time:
         seconds: 0
         then:
           - script.execute: date_update
+      - hours: 6,11,17,23
+        minutes: 0
+        seconds: 0
+        then:
+          - switch.turn_on: switch_antiburn
+      - hours: 6,11,17,23
+        minutes: 30
+        seconds: 0
+        then:
+          - switch.turn_off: switch_antiburn
+
+#---------------------------------------------------------------------------------------------------
+color:
+  - id: my_red
+    red: 100%
+    green: 0%
+    blue: 0%
+  - id: my_yellow
+    red: 100%
+    green: 100%
+    blue: 0%
+  - id: my_green
+    red: 0%
+    green: 100%
+    blue: 0%
+  - id: my_blue
+    red: 0%
+    green: 0%
+    blue: 100%
+  - id: my_gray
+    red: 50%
+    green: 50%
+    blue: 50%
+  - id: my_orange
+    red: 100%
+    green: 50%
+    blue: 0%
+  - id: my_teal
+    red: 0%
+    green: 100%
+    blue: 100%
+  - id: my_white
+    red: 100%
+    green: 100%
+    blue: 100%
+  - id: my_black
+    red: 0%
+    green: 0%
+    blue: 0%
+  - id: value_color
+    hex: 2F8CD8
+  - id: icon_on_color
+    hex: FEC130
+  - id: icon_off_color
+    hex: 45739C
+  - id: button_background
+    hex: 1C1C1C
 #---------------------------------------------------------------------------------------------------
 font:
   - file:
@@ -727,8 +856,12 @@ font:
     bpp: 4
     glyphs: [
       "\U000F0535", # mdi:trending-up
-      "\U000F0533", # mdi:trending-up
+      "\U000F0533", # mdi:trending-down
       "\U000F0534", # mdi:trending-neutral
+      "\U000F0438", # mdi:radiator
+      "\U000F0210", # mdi:fan
+      "\U000F08DD", # mdi:floor-lamp
+      "\U000F1099", # mdi-air-humidifier
       ]          
 #---------------------------------------------------
   - file: 'fonts/materialdesignicons-webfont.ttf' # http://materialdesignicons.com/cdn/7.4.47/ 
@@ -1402,6 +1535,132 @@ lvgl:
                   grid_cell_row_pos: 2
                   text: "Office"
                   styles: header
+#---------------------------------------------------
+    - id: office_control_page
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 790
+            height: 370
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            pad_all: 0
+            x: 0
+            y: 0
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1)]
+              grid_rows: [FR(1),FR(1)]
+              pad_column: 0
+              pad_row: 0
+            widgets:
+              - button:
+                  id: office_heater_button
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  grid_cell_x_align: CENTER
+                  grid_cell_y_align: CENTER
+                  align: CENTER
+                  width: 240
+                  height: 160
+                  bg_color: button_background
+                  text_color: icon_off_color
+                  border_width: 2
+                  border_color: my_gray
+                  checkable: true
+                  pressed:
+                    bg_color: my_red
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: $heater_on  
+                        text_font: mat_des_icons
+                  on_click:
+                    - homeassistant.action:
+                        action: switch.toggle
+                        data:
+                          entity_id: switch.office_heater                  
+              - button:
+                  id: laptop_fan_button
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 0
+                  grid_cell_x_align: CENTER
+                  grid_cell_y_align: CENTER
+                  align: CENTER
+                  width: 240
+                  height: 160
+                  bg_color: button_background
+                  text_color: icon_off_color
+                  border_width: 2
+                  border_color: my_gray
+                  checkable: true
+                  pressed:
+                    bg_color: my_green
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: $fan  
+                        text_font: mat_des_icons
+                  on_click:
+                    - homeassistant.action:
+                        action: switch.toggle
+                        data:
+                          entity_id: switch.power_relays_relay_3                  
+              - button:
+                  id: office_lamp_button
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 1
+                  grid_cell_x_align: CENTER
+                  grid_cell_y_align: CENTER
+                  align: CENTER
+                  width: 240
+                  height: 160
+                  bg_color: button_background
+                  text_color: icon_off_color
+                  border_width: 2
+                  border_color: my_gray
+                  checkable: true
+                  pressed:
+                    bg_color: my_green
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: $floor_lamp  
+                        text_font: mat_des_icons
+                  on_click:
+                    - homeassistant.action:
+                        action: light.toggle
+                        data:
+                          entity_id: light.wiz_dimmable_white_37b080                  
+              - button:
+                  id: office_humidifier_button
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 1
+                  grid_cell_x_align: CENTER
+                  grid_cell_y_align: CENTER
+                  align: CENTER
+                  width: 240
+                  height: 160
+                  bg_color: button_background
+                  text_color: icon_off_color
+                  border_width: 2
+                  border_color: my_gray
+                  checkable: true
+                  pressed:
+                    bg_color: my_green
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: $humidifier_icon  
+                        text_font: mat_des_icons
+                  on_click:
+                    - homeassistant.action:
+                        action: automation.toggle
+                        data:
+                          entity_id: automation.new_office_humidity_control                  
 #---------------------------------------------------------------------------------------------------
 script:
 # This script updates the time
