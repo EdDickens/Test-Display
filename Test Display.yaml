@@ -100,6 +100,13 @@ ch422g:
 #--------------------------------------------------------------------------------------------------
 binary_sensor:
   - platform: homeassistant
+    id: testdisplay_page_turn
+    entity_id: binary_sensor.eddys_office_office_page_turn
+    on_press:
+      then:
+        - lvgl.page.next
+#---------------------------------------------------
+  - platform: homeassistant
     id: heater_toggle
     entity_id: switch.office_heater
     publish_initial_state: true
