@@ -39,6 +39,7 @@ esp32:
 
 # Enable logging
 logger:
+#  level: ERROR
   logs:
     component: ERROR
 
@@ -909,7 +910,7 @@ touchscreen:
 lvgl:
   displays:
     - my_display
-  buffer_size: 25%
+  buffer_size: 100%
   disp_bg_color: 0x000000
 #---------------------------------------------------
   touchscreens:
