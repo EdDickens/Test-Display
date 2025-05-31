@@ -80,6 +80,14 @@ i2c:
 ch422g:
   - i2c_id: i2cbus_a
     id: ch422g_hub
+#---------------------------------------------------------------------------------------------------
+remote_receiver:
+  filter: 50us
+  pin: 
+    number: GPIO6
+    inverted: true
+  dump:
+  - pioneer: {}
 #--------------------------------------------------------------------------------------------------
 binary_sensor:
   - platform: homeassistant
@@ -486,6 +494,48 @@ sensor:
             id: home_pressure_trend
             text: $trending_up
             text_color: 0xFF0000
+#-------------------------------------------------------
+- platform: homeassistant
+  id: office_pm25
+  entity_id: sensor.eddys_office_pm_2_5mm
+  unit_of_measurement: "µg/m³"
+  state_class: measurement
+  device_class: pm25
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: office_pm25_label
+        text:
+          format:  "%4.0fµg/m³"
+          args: [ 'x' ]  
+#-------------------------------------------------------
+- platform: homeassistant
+  id: office_pm10
+  entity_id: sensor.eddys_office_pm_10_0mm
+  unit_of_measurement: "µg/m³"
+  state_class: measurement
+  device_class: pm10
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: office_pm10_label
+        text:
+          format:  "%4.0fµg/m³"
+          args: [ 'x' ]  
+#-------------------------------------------------------
+- platform: homeassistant
+  id: office_pm210
+  entity_id: sensor.eddys_office_scd30_co2
+  unit_of_measurement: "ppb"
+  state_class: measurement
+  device_class: carbon_dioxide
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: office_co2_label
+        text:
+          format:  "%4.0fppb"
+          args: [ 'x' ]  
 #--------------------------------------------------------------------------------------------------
 number:
   - platform: template
@@ -544,12 +594,16 @@ text_sensor:
 - platform: wifi_info
   ip_address:
     name: ${friendly_name} IP
+    id: tstdisp_ip
   ssid:
     name: ${friendly_name} SSID
+    id: tstdisp_ssid
   bssid:
     name: ${friendly_name} BSSID
+    id: tstdisp_bssid
   mac_address:
     name: ${friendly_name} Mac
+    id: tstdisp_mac
 #--------------------------------------
 - platform: homeassistant
   id: FullTimeDate
@@ -752,8 +806,8 @@ font:
     bpp: 4
     glyphs: [
       "0","1","2","3","4","5","6","7","8","9",
-      "-",".","%","°",
-      "F","S","t","e","a","d","y",
+      "-",".","%","°","µ","³","/",
+      "F","S","t","e","a","d","y","p","b","m","g",
       "\u0020", #space
       "\u003A", #colon
       ]
@@ -781,7 +835,9 @@ font:
     size: 80
     bpp: 4
     glyphs: [
-      "N","e","w","M","o","n","W","a","x","i","g","C","r","s","c","t","F","Q","u","G","b","l","L",
+      "0","1","2","3","4","5","6","7","8","9",
+      "N","e","w","M","o","n","W","a","x","i","g","C","r","s","c","t","F","Q","u","G","b","l","L","p","m",
+      "-",".","%","°","µ","³","/",
       "\u0020", #space
       ]
 #---------------------------------------------------
@@ -910,7 +966,7 @@ touchscreen:
 lvgl:
   displays:
     - my_display
-  buffer_size: 100%
+  buffer_size: 12%
   disp_bg_color: 0x000000
 #---------------------------------------------------
   touchscreens:
@@ -1278,6 +1334,68 @@ lvgl:
                   text_align: CENTER
                   outline_width: ${Outlines}
                   outline_color: 0xFF80FF
+#---------------------------------------------------
+    - id: office_aqi_page
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 790
+            height: 370
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            pad_all: 0
+            x: 0
+            y: 0
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1)]
+              grid_rows: [FR(1),FR(1)]
+              pad_column: 0
+              pad_row: 0
+            widgets:
+              - label:
+                  id: office_pm25_label
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  text: "--"
+#                  styles: moon_phase_font
+                  text_font: moon_phase_font
+                  text_color: 0x323AA8
+                  text_align: CENTER
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: CENTER
+                  outline_color: 0xFF80FF
+                  outline_width: $Outlines
+              - label:
+                  id: office_pm10_label
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 0
+                  text: "--"
+#                  styles: moon_phase_font
+                  text_font: moon_phase_font
+                  text_color: 0x323AA8
+                  text_align: CENTER
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: CENTER
+                  outline_color: 0xFF80FF
+                  outline_width: $Outlines
+              - label:
+                  id: office_co2_label
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 1
+                  grid_cell_column_span: 2
+                  text: "---"
+#                  styles: moon_phase_font
+                  text_font: moon_phase_font
+                  text_color: 0x323AA8
+                  text_align: CENTER
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: CENTER
+                  outline_color: 0xFF80FF
+                  outline_width: $Outlines
 #---------------------------------------------------
     - id: moon_page
       bg_color: 0x000000
