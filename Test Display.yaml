@@ -90,10 +90,16 @@ remote_receiver:
   - pioneer: {}
 #--------------------------------------------------------------------------------------------------
 binary_sensor:
-  - platform: homeassistant
-    id: testdisplay_page_turn
-    entity_id: binary_sensor.eddys_office_office_page_turn
-    on_press:
+  - platform: remote_receiver
+    name: "Office Display Page Turn"
+    id: office_display_page_turn
+#   Remote 'USB Scan'
+    internal: True
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x000D
+    on_release:
       then:
         - lvgl.page.next
 #---------------------------------------------------
@@ -186,46 +192,71 @@ sensor:
   name: "${friendly_name} Signal Strength"
   update_interval: 60s
 #---------------------------------------------------
-- platform: homeassistant
-  id: office_brightness
-  entity_id: sensor.eddys_office_ambient_light
-  on_value:
-    then:
-    - if:
-        condition:
-          lambda: 'return (x < (id(display_threshold).state));'
+- platform: veml7700
+  address: 0x10
+  update_interval: 60s
+  i2c_id: i2cbus_a
+  ambient_light:
+    name: "${friendly_name} Ambient light"
+    id: od_Amb_Light
+    unit_of_measurement: "Lx"
+    state_class: measurement
+    device_class: illuminance
+    accuracy_decimals: 2
+    filters:
+      - offset: 0 # Placeholder for offset
+      - lambda: return x * 1; # Placeholder for scaling
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: 'return (x < (id(display_threshold).state));'
+            then:
+              - switch.turn_off: backlight_switch
+            else:
+              - switch.turn_on: backlight_switch
+#------------------------
+    on_value_range: 
+      - below: 1.50
         then:
-          - switch.turn_off: backlight_switch
-        else:
-          - switch.turn_on: backlight_switch
+          - number.set:
+              id: clock_text_opacity
+              value: 65
 #------------------------
-  on_value_range: 
-    - below: 1.50
-      then:
-        - number.set:
-            id: clock_text_opacity
-            value: 65
+      - above: 1.51
+        below: 2.50
+        then:
+          - number.set:
+              id: clock_text_opacity
+              value: 75
 #------------------------
-    - above: 1.51
-      below: 2.50
-      then:
-        - number.set:
-            id: clock_text_opacity
-            value: 75
+      - above: 2.51
+        below: 4.00
+        then:
+          - number.set:
+              id: clock_text_opacity
+              value: 85
 #------------------------
-    - above: 2.51
-      below: 4.00
-      then:
-        - number.set:
-            id: clock_text_opacity
-            value: 85
-#------------------------
-    - above: 4.01
-      then:
-        - number.set:
-            id: clock_text_opacity
-            value: 100
+      - above: 4.01
+        then:
+          - number.set:
+              id: clock_text_opacity
+              value: 100
 #--------------------------------------
+  full_spectrum:
+    name: "${friendly_name} White Light"
+    id: od_white_light
+  infrared:
+    name: "${friendly_name} Infrared"
+    id: od_infred
+#  ambient_light_counts:
+#    name: "Amb Counts"
+#  full_spectrum_counts:
+#    name: "Full Spect Counts"
+#  actual_gain:
+#    name: "Actual gain"
+#  actual_integration_time:
+#    name: "Actual Int Time"
 - platform: homeassistant
   id: water_heater_alarm
   entity_id: sensor.utility_room_temperature_delta_f
