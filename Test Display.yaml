@@ -260,28 +260,6 @@ sensor:
 #    name: "Actual gain"
 #  actual_integration_time:
 #    name: "Actual Int Time"
-- platform: homeassistant
-  id: freezer_alarm
-  entity_id: sensor.utility_room_freezer_temperature_degf
-  unit_of_measurement: "°F"
-  state_class: measurement
-  device_class: temperature
-  internal: false
-  on_value_range: 
-    - above: 35.1
-      then:
-        - lvgl.widget.update:
-            id:
-              - header_label
-            styles:
-              - warning_header      
-    - below: 35.0
-      then:
-        - lvgl.widget.update:
-            id:
-              - header_label
-            styles:
-              - header      
 #--------------------------------------
 - platform: homeassistant
   id: office_temperature
