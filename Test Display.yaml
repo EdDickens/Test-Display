@@ -604,12 +604,11 @@ text_sensor:
   ip_address:
     name: ${friendly_name} IP
     id: tstdisp_ip
+    update_interval: 1h
   ssid:
     name: ${friendly_name} SSID
     id: tstdisp_ssid
-  bssid:
-    name: ${friendly_name} BSSID
-    id: tstdisp_bssid
+    update_interval: 1h
   mac_address:
     name: ${friendly_name} Mac
     id: tstdisp_mac
