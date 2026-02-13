@@ -61,9 +61,9 @@ ota:
 #    password: !secret web_password
 #---------------------------------------------------------------------------------------------------
 wifi:
+  min_auth_mode: wpa2
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-
   fast_connect: off
 #--------------------------------------------------------------------------------------------------
 psram:
@@ -103,6 +103,267 @@ binary_sensor:
       then:
         - lvgl.page.next
 #---------------------------------------------------
+  - platform: remote_receiver
+    name: "Wiz Light Toggle"
+#   Remote 'Power Button'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.wiz_dimmable_white_37b080
+            brightness: !lambda |- 
+              return int(30*2.55); // Set brightness to 30%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    on_double_click: 
+      - homeassistant.service: 
+          service: light.turn_on
+          data: 
+            entity_id: light.wiz_dimmable_white_37b080
+            brightness: !lambda |- 
+              return int(100*2.55); // Set brightness to 100% on double-click
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x0045
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights Toggle"
+#   Remote Button '0'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.office_ceiling_fan
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x0016
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights 10%"
+#   Remote Button '1'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.office_ceiling_fan
+            brightness: !lambda |- 
+              return int(10*2.55); // Set brightness to 10%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x000C
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights 20%"
+#   Remote Button '2'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.office_ceiling_fan
+            brightness: !lambda |- 
+              return int(20*2.55); // Set brightness to 20%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x0018
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights 30%"
+#   Remote Button '3'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.office_ceiling_fan
+            brightness: !lambda |- 
+              return int(30*2.55); // Set brightness to 30%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x005E
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights 40%"
+#   Remote Button '4'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.office_ceiling_fan
+            brightness: !lambda |- 
+              return int(40*2.55); // Set brightness to 40%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x0008
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights 50%"
+#   Remote Button '5'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.office_ceiling_fan
+            brightness: !lambda |- 
+              return int(50*2.55); // Set brightness to 50%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x001C
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights 60%"
+#   Remote Button '6'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.office_ceiling_fan
+            brightness: !lambda |- 
+              return int(60*2.55); // Set brightness to 60%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x005A
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights 70%"
+#   Remote Button '7'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.office_ceiling_fan
+            brightness: !lambda |- 
+              return int(70*2.55); // Set brightness to 70%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x0042
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights 80%"
+#   Remote Button '8'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.office_ceiling_fan
+            brightness: !lambda |- 
+              return int(80*2.55); // Set brightness to 80%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x0052
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights 90%"
+#   Remote Button '9'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.office_ceiling_fan
+            brightness: !lambda |- 
+              return int(90*2.55); // Set brightness to 90%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x004A
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Office Ceiling Fan Lights 100%"
+#   Remote Button 'EQ'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.office_ceiling_fan
+            brightness: !lambda |- 
+              return int(100*2.55); // Set brightness to 100%
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x0007
+#---------------------------------------------------
+  - platform: remote_receiver
+    name: "Floor Lamp Brighter" #This increases the lamp brightness by 10% with each button press
+#   Remote Button '+'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.wiz_dimmable_white_37b080
+          data_template:
+            brightness: '{{states.light.wiz_dimmable_white_37b080.attributes.brightness + (10*2.55)}}'
+            # Brightness value needs to written as 0-255 so we need to add 25.5 instead of 10
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x0009
+#---------------------------------------------------------------------------------------------------
+  - platform: remote_receiver
+    name : "Floor Lamp Dimmer" #This decreases the lamp brightness by 10% with each button press
+#   Remote Button '-'
+    internal: true
+    on_release:
+      - homeassistant.service:
+          service: light.turn_on
+          data:
+            entity_id: light.wiz_dimmable_white_37b080
+          data_template:
+            brightness: '{{states.light.wiz_dimmable_white_37b080.attributes.brightness - (10*2.55)}}'
+            # Brightness value needs to written as 0-255 so we need to subtract 25.5 instead of 10
+      - script.stop: show_brightness
+      - script.execute: show_brightness
+    filters:
+      - delayed_off: 100ms
+    pioneer:
+      rc_code_1: 0x0015
+#---------------------------------------------------------------------------------------------------
   - platform: homeassistant
     id: heater_toggle
     entity_id: switch.office_heater
@@ -211,6 +472,7 @@ sensor:
         - if:
             condition:
               lambda: 'return (x < (id(display_threshold).state));'
+              #Check to see if the returned value is less than the setpoint
             then:
               - switch.turn_off: backlight_switch
             else:
@@ -259,6 +521,34 @@ sensor:
 #    name: "Actual Int Time"
 #--------------------------------------
 - platform: homeassistant
+  id: ceiling_fan_brightness
+  entity_id: light.office_ceiling_fan
+  attribute: brightness
+  unit_of_measurement: "%"
+  state_class: measurement
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: ceiling_fan_brightness_label
+        text:
+          format: "%.0f%%" #Format the value as "25%"
+          args: [ 'x/2.55' ] #The brightness is returned as 0-255 so divide by 2.55 to scale to 0-100%
+#--------------------------------------
+- platform: homeassistant
+  id: floor_lamp_brightness
+  entity_id: light.wiz_dimmable_white_37b080
+  attribute: brightness
+  unit_of_measurement: "%"
+  state_class: measurement
+  internal: true
+  on_value:
+    - lvgl.label.update:
+        id: floor_lamp_brightness_label
+        text: 
+          format: "%.0f%%" #Format the value as "25%"
+          args: [ 'x/2.55' ] #The brightness is returned as 0-255 so divide by 2.55 to scale to 0-100%
+#--------------------------------------
+- platform: homeassistant
   id: office_temperature
   entity_id: sensor.eddys_office_scd30_temperature
   unit_of_measurement: "°F"
@@ -269,7 +559,7 @@ sensor:
     - lvgl.label.update:
         id: indoor_temp
         text:
-          format: "%.0f°F"
+          format: "%.0f°F" #Format the vale as "72°F"
           args: [ 'x' ]
 #--------------------------------------
 - platform: homeassistant
@@ -283,7 +573,7 @@ sensor:
     - lvgl.label.update:
         id: indoor_humidity
         text:
-          format:  "%.0f%%"
+          format:  "%.0f%%" #Format the value as "25%"
           args: [ 'x' ]  
 #--------------------------------------
 - platform: homeassistant
@@ -298,7 +588,7 @@ sensor:
         id:
           - outdoor_temp
         text:
-          format: "%.0f°F"
+          format: "%.0f°F" #Format the vale as "72°F"
           args: [ 'x' ]
 #--------------------------------------
 - platform: homeassistant
@@ -312,7 +602,7 @@ sensor:
     - lvgl.label.update:
         id: outdoor_humidity
         text:
-          format:  "%.0f%%"
+          format:  "%.0f%%" #Format the vale as "72°F"
           args: [ 'x' ]  
 #--------------------------------------
 #- platform: homeassistant
@@ -327,7 +617,7 @@ sensor:
 #    - lvgl.label.update:
 #        id: lbl_weather_forecast_temphi
 #        text:
-#          format:  "%.0f°F"
+#          format:  "%.0f°F" #Format the vale as "72°F"
 #          args: [ 'x' ]  
 #--------------------------------------
 #- platform: homeassistant
@@ -342,7 +632,7 @@ sensor:
 #    - lvgl.label.update:
 #        id: lbl_weather_forecast_templo
 #        text:
-#          format:  "%.0f°F"
+#          format:  "%.0f°F" #Format the vale as "72°F"
 #          args: [ 'x' ]
 #--------------------------------------
 - platform: homeassistant
@@ -614,6 +904,18 @@ text_sensor:
     id: tstdisp_mac
 #--------------------------------------
 - platform: homeassistant
+  id: ceiling_fan_light_state
+  entity_id: light.office_ceiling_fan
+  internal: true
+  name: Ceiling Fan Light State
+#--------------------------------------
+- platform: homeassistant
+  id: floor_lamp_light_state
+  entity_id: light.wiz_dimmable_white_37b080
+  internal: true
+  name: Floor Lamp Light State
+#--------------------------------------
+- platform: homeassistant
   id: FullTimeDate
   entity_id: sensor.full_time_and_date
   device_class: timestamp
@@ -828,11 +1130,12 @@ font:
     size: 120
     bpp: 4
     glyphs: [
-      "P","r","e","s","u","O","t","d","o","I","n","f","i","c","V","C","a","h","k","W","H",
+      "P","r","e","s","u","O","t","d","o","I","n","f","i","c","V","C","a","h","k","W","H","B","g",
       "0","1","2","3","4","5","6","7","8","9",
       "-",
       "\u0020", #space
       "\u003A", #colon
+      "\u0025", #percent
       ]
 #---------------------------------------------------
   - file:
@@ -1502,6 +1805,66 @@ lvgl:
                   text: "Office"
                   styles: header
 #---------------------------------------------------
+    - id: office_lights_page
+      bg_color: 0x000000
+      widgets:
+        - obj:
+            align: CENTER
+            width: 790
+            height: 370
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            outline_width: ${Outlines}
+            outline_color: 0xFF0000
+            pad_all: 0
+            x: 0
+            y: 0
+            layout:
+              type: grid
+              grid_columns: [FR(1),FR(1)]
+              grid_rows: [FR(40),FR(40),FR(20)]
+              pad_column: 0
+              pad_row: 0
+            widgets:
+              - label:
+                  id: brightness_header
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  grid_cell_column_span: 2
+                  text: "Brightness"
+                  styles: page_label_style
+              - label:
+                  id: ceiling_fan_brightness_label
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 1
+                  text: "--%"
+                  styles: page_label_style
+              - label:
+                  id: floor_lamp_brightness_label
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 1
+                  styles: page_label_style
+                  text: !lambda |-
+                    if (isnan(id(floor_lamp_brightness).state)) { //Check for "nan" value
+                      return "Off"; //Return "Off" is the value is "nan"
+                    } else {
+                      char buffer[4];
+                      snprintf(buffer, sizeof(buffer), "--%", id(floor_lamp_brightness).state);
+                      return buffer;
+                    }
+              - label:
+                  id: lbl_ceilingfan_brightness_id
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 2
+                  text: "Ceiling Fan"
+                  styles: header
+              - label:
+                  id: lbl_floorlamp_brightnessid
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 2
+                  text: "Floor Lamp"
+                  styles: header
+#---------------------------------------------------
     - id: office_control_page
       bg_color: 0x000000
       widgets:
@@ -1628,7 +1991,14 @@ lvgl:
                         data:
                           entity_id: automation.new_office_humidity_control                  
 #---------------------------------------------------------------------------------------------------
-#script:
+script:
+  - id: show_brightness
+    then:
+      - lvgl.page.show:
+          id: office_lights_page
+      - delay: 5s
+      - lvgl.page.show:
+          id: main_page
 # This script updates the time
 #            snprintf(time_buf, sizeof(time_buf), "%2d:%02d%s", hour_12, now.minute, is_pm ? "pm" : "am"); // This does have the ap/pm flag
 #  - id: time_update
