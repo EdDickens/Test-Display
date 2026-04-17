@@ -1,6 +1,6 @@
 substitutions:
-  name: "test-display"
-  friendly_name: Test Display
+  name: "third-floor-display"
+  friendly_name: Thrid Floor Display
   
   trending_up: "\U000F0535" # mdi:trending-up
   trending_down: "\U000F0533" # mdi:trending-up
@@ -18,7 +18,7 @@ esphome:
   friendly_name: ${friendly_name}
   name_add_mac_suffix: false
   project: 
-    name: mobydork.test_display
+    name: mobydork.third_floor_display
     version: '1.0'
 #---------------------------------------------------------------------------------------------------
 esp32:
@@ -420,55 +420,55 @@ sensor:
       then:
         - lvgl.label.update:
             id: home_pressure_display
-            text_color: 0x000000
-            bg_color: 0xC60000
+            text_color: 0xC60000
+            bg_color: 0x000000
 #------------------------
     - above: 29.41 # Low
       below: 29.70
       then:
         - lvgl.label.update:
             id: home_pressure_display
-            text_color: 0x000000
-            bg_color: 0xFF8000
+            text_color: 0xFF8000
+            bg_color: 0x000000
 #------------------------
     - above: 29.71 # A Littel Low
       below: 29.90
       then:
         - lvgl.label.update:
             id: home_pressure_display
-            text_color: 0x000000
-            bg_color: 0xE6E600
+            text_color: 0xE6E600
+            bg_color: 0x000000
 #------------------------
     - above: 29.91 # Normal
       below: 30.10
       then:
         - lvgl.label.update:
             id: home_pressure_display
-            text_color: 0x000000
-            bg_color: 0x00AA00
+            text_color: 0x00AA00
+            bg_color: 0x000000
 #------------------------
     - above: 30.11 # A Little High
       below: 30.30
       then:
         - lvgl.label.update:
             id: home_pressure_display
-            text_color: 0x000000
-            bg_color: 0xE6E600
+            text_color: 0x99AA00
+            bg_color: 0x000000
 #------------------------
     - above: 30.31 # High
       below: 30.50
       then:
         - lvgl.label.update:
             id: home_pressure_display
-            text_color: 0x000000
-            bg_color: 0xFF8000
+            text_color: 0x6600AA
+            bg_color: 0x000000
 #------------------------
     - above: 30.51 # Very High
       then:
         - lvgl.label.update:
             id: home_pressure_display
-            text_color: 0x000000
-            bg_color: 0xC60000
+            text_color: 0xA400AA
+            bg_color: 0x000000
 #--------------------------------------
 - platform: homeassistant
   id: pressure_trend
@@ -761,7 +761,7 @@ font:
       family: Concert One
       weight: regular
     id: two_cell
-    size: 150
+    size: 140
     bpp: 4
     glyphs: [
       "0","1","2","3","4","5","6","7","8","9",
@@ -963,7 +963,7 @@ lvgl:
       pad_all: 0
       pad_row: 0
       pad_column: 0
-      text_font: montserrat_28
+      text_font: montserrat_48
       border_color: 0x000000
       text_color: 0x323AA8
 #---------------------------------------------------
@@ -1073,7 +1073,7 @@ lvgl:
         - obj:
             align: bottom_mid
             width: 790
-            height: 50
+            height: 60
             pad_all: 0
             bg_opa: TRANSP
             border_opa: TRANSP
@@ -1129,16 +1129,16 @@ lvgl:
       bg_color: 0x000000
       widgets:
         - obj:
-            align: CENTER
+            align: top_mid
             width: 790
-            height: 370
+            height: 365
             bg_opa: TRANSP
             border_opa: TRANSP
             outline_width: ${Outlines}
             outline_color: 0xFF0000
             pad_all: 0
             x: 0
-            y: 0
+            y: 55
             layout:
               type: grid
               grid_columns: [FR(1)]
@@ -1155,16 +1155,16 @@ lvgl:
       bg_color: 0x000000
       widgets:
         - obj:
-            align: CENTER
+            align: top_mid
             width: 790
-            height: 370
+            height: 365
             bg_opa: TRANSP
             border_opa: TRANSP
             outline_width: ${Outlines}
             outline_color: 0xFF0000
             pad_all: 0
             x: 0
-            y: 0
+            y: 55
             layout:
               type: grid
               grid_columns: [FR(1),FR(1)]
@@ -1196,16 +1196,16 @@ lvgl:
       bg_color: 0x000000
       widgets:
         - obj:
-            align: CENTER
+            align: top_mid
             width: 790
-            height: 370
+            height: 365
             bg_opa: TRANSP
             border_opa: TRANSP
             outline_width: ${Outlines}
             outline_color: 0xFF0000
             pad_all: 0
             x: 0
-            y: 0
+            y: 55
             layout:
               type: grid
               grid_columns: [FR(1),FR(1)]
@@ -1237,16 +1237,16 @@ lvgl:
       bg_color: 0x000000
       widgets:
         - obj:
-            align: CENTER
+            align: top_mid
             width: 790
-            height: 370
+            height: 365
             bg_opa: TRANSP
             border_opa: TRANSP
             outline_width: ${Outlines}
             outline_color: 0xFF0000
             pad_all: 0
             x: 0
-            y: 0
+            y: 55
             layout:
               type: grid
               grid_columns: [FR(1),FR(1)]
@@ -1285,16 +1285,16 @@ lvgl:
       bg_color: 0x000000
       widgets:
         - obj:
-            align: CENTER
+            align: top_mid
             width: 790
-            height: 370
+            height: 365
             bg_opa: TRANSP
             border_opa: TRANSP
             outline_width: ${Outlines}
             outline_color: 0xFF0000
             pad_all: 0
             x: 0
-            y: 0
+            y: 55
             layout:
               type: grid
               grid_columns: [FR(1),FR(1)]
@@ -1347,16 +1347,16 @@ lvgl:
       bg_color: 0x000000
       widgets:
         - obj:
-            align: CENTER
+            align: top_mid
             width: 790
-            height: 370
+            height: 365
             bg_opa: TRANSP
             border_opa: TRANSP
             outline_width: ${Outlines}
             outline_color: 0xFF0000
             pad_all: 0
             x: 0
-            y: 0
+            y: 55
             layout:
               type: grid
               grid_columns: [FR(1),FR(1)]
@@ -1400,16 +1400,16 @@ lvgl:
       bg_color: 0x000000
       widgets:
         - obj:
-            align: CENTER
+            align: top_mid
             width: 790
-            height: 370
+            height: 365
             bg_opa: TRANSP
             border_opa: TRANSP
             outline_width: ${Outlines}
             outline_color: 0xFF0000
             pad_all: 0
             x: 0
-            y: 0
+            y: 55
             layout:
               type: grid
               grid_columns: [FR(1),FR(1)]
@@ -1484,16 +1484,16 @@ lvgl:
       bg_color: 0x000000
       widgets:
         - obj:
-            align: CENTER
+            align: top_mid
             width: 790
-            height: 370
+            height: 365
             bg_opa: TRANSP
             border_opa: TRANSP
             outline_width: ${Outlines}
             outline_color: 0xFF0000
             pad_all: 0
             x: 0
-            y: 0
+            y: 55
             layout:
               type: grid
               grid_columns: [FR(1),FR(1)]
